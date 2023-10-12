@@ -81,6 +81,8 @@ unsigned int Shader::compileShader(int type, const std::string& source) {
     std::cout << "Failed to compile" << (type == GL_VERTEX_SHADER ? " vertex " : " fragment ") << "shader" << std::endl;
     std::cout << message << std::endl;
 
+    throw std::runtime_error("Shader program is not valid.");
+
     return 0;
 }
 
@@ -94,8 +96,33 @@ unsigned int Shader::createShader(const std::string& vertexShader, const std::st
     glAttachShader(program, fs);
     glLinkProgram(program);
 
-    /* Error handling */
+    // Check if the program is valid
     glValidateProgram(program);
+
+    // Check the validation status
+    int validateStatus;
+    glGetProgramiv(program, GL_VALIDATE_STATUS, &validateStatus);
+
+    if (validateStatus == GL_TRUE) {
+        printf("Shader program is valid.\n");
+    }
+    else {
+        printf("Shader program is not valid.\n");
+
+        // Get the validation log to see what went wrong
+        int logLength;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLength);
+
+        if (logLength > 0) {
+            char* infoLog = (char*)malloc(logLength);
+            glGetProgramInfoLog(program, logLength, NULL, infoLog);
+            printf("Program Info Log:\n%s\n", infoLog);
+            free(infoLog);
+        }
+
+        // Throw an exception to stop the program
+        throw std::runtime_error("Shader program is not valid.");
+    }
 
     glDeleteShader(vs);
     glDeleteShader(fs);

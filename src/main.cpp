@@ -3,6 +3,9 @@
 
 #include <iostream>
 
+#include "VertexArray.h"
+#include "Shader.h"
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
@@ -39,17 +42,25 @@ int main()
         return -1;
     }
 
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
+    std::vector<Vertex> vertices = {
+        {-0.5f, 0.5f, 0.0f},
+        {0.5f, 0.5f, 0.0f},
+        {0.5f,-0.5f, 0.0f},
+        {-0.5f,-0.5f, 0.0f},
     };
 
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    std::vector<unsigned int> indices = {
+        0, 1, 2,
+        2, 3, 0
+    };
 
+    VertexArray vao;
+    vao.layout.push<float>(3);
+    vao.setVertices(vertices, indices);
+
+    Shader shader("resources/Shaders/Basic.shader");
+
+    glEnable(GL_DEPTH_TEST);
 
     // render loop
     // -----------
@@ -61,11 +72,13 @@ int main()
 
         // render
         // ------
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        shader.setUniform4f("u_Color", 1.0, 0.0, 1.0, 1.0);
+        vao.bind();
 
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

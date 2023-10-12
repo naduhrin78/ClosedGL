@@ -5,6 +5,7 @@
 
 #include <glad/glad.h>
 #include <vector>
+#include <cassert>
 
 struct VertexBufferElement {
     int count;
