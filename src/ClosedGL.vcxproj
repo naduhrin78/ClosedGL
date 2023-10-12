@@ -163,6 +163,9 @@
     <ClInclude Include="VertexBufferLayout.h" />
     <ClInclude Include="VertexObject.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="resources\shaders\Model.shader" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
