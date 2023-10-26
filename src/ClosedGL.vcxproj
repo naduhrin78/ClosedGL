@@ -151,6 +151,8 @@
     <ClCompile Include="VertexObject.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AnimData.h" />
+    <ClInclude Include="AssimpGLMHelpers.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="Mesh.h" />

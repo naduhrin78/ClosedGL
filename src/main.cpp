@@ -12,8 +12,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1440;
+const unsigned int SCR_HEIGHT = 900;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -36,7 +36,7 @@ int main()
 
     // glfw window creation
    // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "ClosedGL", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -59,7 +59,7 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    const char* modelPath = "Resources/models/backpack/backpack.obj";
+    const char* modelPath = "Resources/models/city/Apocalyptic City.obj";
     Model gojoModel(const_cast<char*>(modelPath));
 
     Shader shader("resources/shaders/Model.shader");
@@ -92,6 +92,10 @@ int main()
         shader.setUniformMat4f("view", view);
 
         glm::mat4 model = glm::mat4(1.0f);
+
+        // it's a bit too big for our scene, so scale it down
+        model = glm::scale(model, glm::vec3(.0005f, .0005f, .0005f));
+        //model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         shader.setUniformMat4f("model", model);
 
         gojoModel.Draw(shader);
