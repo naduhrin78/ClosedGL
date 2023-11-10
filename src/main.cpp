@@ -5,6 +5,7 @@
 
 #include "Model.h"
 #include "Camera.h"
+#include "Animator.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -60,7 +61,10 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     const char* modelPath = "Resources/models/colossal/colossal.fbx";
-    Model gojoModel(const_cast<char*>(modelPath));
+
+    Model colossalTitanModel(const_cast<char*>(modelPath));
+    Animation rumblingAnimation(const_cast<char*>(modelPath), &colossalTitanModel);
+    Animator animator(&rumblingAnimation);
 
     Shader shader("resources/shaders/Model.shader");
 
@@ -77,6 +81,7 @@ int main()
         // input
         // -----
         processInput(window);
+        animator.UpdateAnimation(deltaTime);
 
         // render
         // ------
@@ -91,6 +96,10 @@ int main()
         glm::mat4 view = camera.getViewMatrix();
         shader.setUniformMat4f("view", view);
 
+        auto transforms = animator.GetFinalBoneMatrices();
+        for (int i = 0; i < transforms.size(); ++i)
+            shader.setUniformMat4f("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
+
         glm::mat4 model = glm::mat4(1.0f);
 
         // it's a bit too big for our scene, so scale it down
@@ -98,7 +107,7 @@ int main()
         //model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         shader.setUniformMat4f("model", model);
 
-        gojoModel.Draw(shader);
+        colossalTitanModel.Draw(shader);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
