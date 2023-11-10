@@ -59,7 +59,7 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    const char* modelPath = "Resources/models/city/Apocalyptic City.obj";
+    const char* modelPath = "Resources/models/colossal/colossal.fbx";
     Model gojoModel(const_cast<char*>(modelPath));
 
     Shader shader("resources/shaders/Model.shader");

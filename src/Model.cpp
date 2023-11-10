@@ -90,13 +90,13 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	}
 	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-	std::vector<MeshTexture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+	std::vector<MeshTexture> diffuseMaps = loadMaterialTextures(scene, material, aiTextureType_DIFFUSE, "texture_diffuse");
 	textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-	std::vector<MeshTexture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+	std::vector<MeshTexture> specularMaps = loadMaterialTextures(scene, material, aiTextureType_SPECULAR, "texture_specular");
 	textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-	std::vector<MeshTexture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+	std::vector<MeshTexture> normalMaps = loadMaterialTextures(scene, material, aiTextureType_HEIGHT, "texture_normal");
 	textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-	std::vector<MeshTexture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+	std::vector<MeshTexture> heightMaps = loadMaterialTextures(scene, material, aiTextureType_AMBIENT, "texture_height");
 	textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
 	ExtractBoneWeightForVertices(vertices, mesh, scene);
@@ -189,8 +189,59 @@ unsigned int Model::TextureFromFile(const char* path, const std::string& directo
 	}
 	else
 	{
-		std::cout << "Texture failed to load at path: " << path << std::endl;
 		stbi_image_free(data);
+		return -1;
+	}
+
+	return textureID;
+}
+
+unsigned int Model::TextureFromMemory(const aiScene* scene, const char* path)
+{
+	const aiTexture* texture = scene->GetEmbeddedTexture(path);
+
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+
+	int width, height, nrComponents;
+	stbi_set_flip_vertically_on_load(true);
+	
+	unsigned char* data = nullptr;
+
+	if (texture->mHeight == 0)
+	{
+		data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(texture->pcData), texture->mWidth, &width, &height, &nrComponents, 0);
+	}
+	else
+	{
+		data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(texture->pcData), texture->mWidth * texture->mHeight, &width, &height, &nrComponents, 0);
+	}
+
+	if (data)
+	{
+		GLenum format;
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+	}
+	else
+	{
+		stbi_image_free(data);
+		return -1;
 	}
 
 	return textureID;
@@ -198,7 +249,7 @@ unsigned int Model::TextureFromFile(const char* path, const std::string& directo
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.
 // the required info is returned as a Texture struct.
-std::vector<MeshTexture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
+std::vector<MeshTexture> Model::loadMaterialTextures(const aiScene* scene, aiMaterial* mat, aiTextureType type, std::string typeName)
 {
 	std::vector<MeshTexture> textures;
 	for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
@@ -219,7 +270,18 @@ std::vector<MeshTexture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureT
 		if (!skip)
 		{   // if texture hasn't been loaded already, load it
 			MeshTexture texture;
-			texture.id = TextureFromFile(str.C_Str(), this->directory);
+			unsigned int id = TextureFromFile(str.C_Str(), this->directory);
+
+			if (id == -1) {
+				// May be its embedded
+				id = TextureFromMemory(scene, str.C_Str());
+
+				if (id == -1) {
+					std::cout << "Texture failed to load" << std::endl;
+				}
+			}
+
+			texture.id = id;
 			texture.type = typeName;
 			texture.path = str.C_Str();
 			textures.push_back(texture);
