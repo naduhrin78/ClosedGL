@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef AnimData_h
+#define AnimData_h
+
 #include<glm/glm.hpp>
 
 struct BoneInfo
@@ -11,4 +14,5 @@ struct BoneInfo
 	glm::mat4 offset;
 
 };
-#pragma once
+
+#endif /* AnimData_h */
