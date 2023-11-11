@@ -112,5 +112,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\AnimModel.shader" />
+    <None Include="resources\shaders\StaticModel.shader" />
+    <None Include="resources\shaders\Basic.shader" />
   </ItemGroup>
 </Project>
