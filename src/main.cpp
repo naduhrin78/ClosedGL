@@ -61,32 +61,33 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
+    const char* founderTitanModelPath = "Resources/models/founder/founder.fbx";
     const char* colossalTitanModelPath = "Resources/models/colossal/colossal.fbx";
 
-    std::vector<Model*> colossalTitanModels;
-    std::vector<Animator*> animators;
-    std::vector<std::pair<int, int>> titanTranslate;
-
-    int NUM_TITANS = 10;
-    int NUM_TITAN_ROWS = 4;
+    const int NUM_TITANS = 10;
+    const int NUM_TITAN_ROWS = 20;
+    std::pair<int, int> titanTranslate[NUM_TITAN_ROWS][NUM_TITANS];
 
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    std::uniform_int_distribution<> randTitanXDis(73, 77);
-    std::uniform_int_distribution<> randTitanYDis(-5, 5);
+    std::uniform_int_distribution<> randTitanXDis(60, 90);
+    std::uniform_int_distribution<> randTitanYDis(60, 80);
 
-    for (int i = 0; i < NUM_TITANS; i++) {
-        Model* colossalTitanModel = new Model(const_cast<char*>(colossalTitanModelPath));
-        Animation* rumblingAnimation = new Animation(const_cast<char*>(colossalTitanModelPath), colossalTitanModel);
-        Animator* animator = new Animator(rumblingAnimation);
+    Model* colossalTitanModel = new Model(const_cast<char*>(colossalTitanModelPath));
+    Animation* rumblingAnimation = new Animation(const_cast<char*>(colossalTitanModelPath), colossalTitanModel);
+    Animator* animator = new Animator(rumblingAnimation);
 
-        colossalTitanModels.push_back(colossalTitanModel);
-        animators.push_back(animator);
-        titanTranslate.push_back({ randTitanXDis(gen), randTitanYDis(gen) });
+    for (int i = 0; i < NUM_TITAN_ROWS; i++) {
+        for (int j = 0; j < NUM_TITANS; j++) {
+            titanTranslate[i][j] = { randTitanXDis(gen), randTitanYDis(gen) };
+        }
     }
 
+    Model* founderTitanModel = new Model(const_cast<char*>(founderTitanModelPath));
+
     Shader titanShader("resources/shaders/AnimModel.shader");
+    Shader founderShader("resources/shaders/StaticModel.shader");
 
     // render loop
     // -----------
@@ -101,6 +102,7 @@ int main()
         // input
         // -----
         processInput(window);
+        animator->UpdateAnimation(deltaTime);
 
         // render
         // ------
@@ -115,35 +117,60 @@ int main()
 
         titanShader.bind();
 
-        for (int i = 0; i < NUM_TITANS; i++) {
-            animators[i]->UpdateAnimation(deltaTime);
+        for (int i = 0; i < NUM_TITAN_ROWS; i++) {
+            for (int j = 0; j < NUM_TITANS; j++) {
+                // pass projection matrix to shader (note that in this case it could change every frame)
+                glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+                titanShader.setUniformMat4f("projection", projection);
 
-            // pass projection matrix to shader (note that in this case it could change every frame)
-            glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-            titanShader.setUniformMat4f("projection", projection);
+                // camera/view transformation
+                glm::mat4 view = camera.getViewMatrix();
+                titanShader.setUniformMat4f("view", view);
 
-            // camera/view transformation
-            glm::mat4 view = camera.getViewMatrix();
-            titanShader.setUniformMat4f("view", view);
+                auto transforms = animator->GetFinalBoneMatrices();
+                for (int i = 0; i < transforms.size(); ++i)
+                    titanShader.setUniformMat4f("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
 
-            auto transforms = animators[i]->GetFinalBoneMatrices();
-            for (int i = 0; i < transforms.size(); ++i)
-                titanShader.setUniformMat4f("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
+                glm::mat4 model = glm::mat4(1.0f);
 
-            glm::mat4 model = glm::mat4(1.0f);
+                // it's a bit too big for our scene, so scale it down
+                model = glm::scale(model, glm::vec3(.0005f, .0005f, .0005f));
+                model = glm::translate(model, glm::vec3(titanTranslate[i][j].first * i, 0.0f, titanTranslate[i][j].second * j));
 
-            // it's a bit too big for our scene, so scale it down
-            model = glm::scale(model, glm::vec3(.0005f, .0005f, .0005f));
-            model = glm::translate(model, glm::vec3(titanTranslate[i].first * i, 0.0f, titanTranslate[i].second * i));
+                //model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                titanShader.setUniformMat4f("model", model);
 
-            //model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            titanShader.setUniformMat4f("model", model);
-
-            colossalTitanModels[i]->Draw(titanShader);
+                colossalTitanModel->Draw(titanShader);
+            }
         }
-        
 
         titanShader.unbind();
+
+        founderShader.bind();
+
+        // pass projection matrix to shader (note that in this case it could change every frame)
+        glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        founderShader.setUniformMat4f("projection", projection);
+
+        // camera/view transformation
+        glm::mat4 view = camera.getViewMatrix();
+        founderShader.setUniformMat4f("view", view);
+
+        auto transforms = animator->GetFinalBoneMatrices();
+        for (int i = 0; i < transforms.size(); ++i)
+            founderShader.setUniformMat4f("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
+
+        glm::mat4 model = glm::mat4(1.0f);
+
+        // it's a bit too big for our scene, so scale it down
+        model = glm::scale(model, glm::vec3(.004f, .004f, .004f));
+        model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(100.f, -70.f, 0.f));
+        founderShader.setUniformMat4f("model", model);
+
+        founderTitanModel->Draw(founderShader);
+
+        founderShader.unbind();
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
