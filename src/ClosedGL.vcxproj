@@ -172,7 +172,7 @@
     <ClInclude Include="VertexObject.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\shaders\Model.shader" />
+    <None Include="resources\shaders\AnimModel.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

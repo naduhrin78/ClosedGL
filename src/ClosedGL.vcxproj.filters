@@ -111,6 +111,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\shaders\Model.shader" />
+    <None Include="resources\shaders\AnimModel.shader" />
   </ItemGroup>
 </Project>
