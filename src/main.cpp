@@ -60,13 +60,18 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    const char* modelPath = "Resources/models/colossal/colossal.fbx";
+    const char* cityModelPath = "Resources/models/city/founder.fbx";
 
-    Model colossalTitanModel(const_cast<char*>(modelPath));
-    Animation rumblingAnimation(const_cast<char*>(modelPath), &colossalTitanModel);
+    Model city(const_cast<char*>(cityModelPath));
+
+    const char* colossalTitanModelPath = "Resources/models/colossal/colossal.fbx";
+
+    Model colossalTitanModel(const_cast<char*>(colossalTitanModelPath));
+    Animation rumblingAnimation(const_cast<char*>(colossalTitanModelPath), &colossalTitanModel);
     Animator animator(&rumblingAnimation);
 
-    Shader shader("resources/shaders/Model.shader");
+    Shader titanShader("resources/shaders/AnimModel.shader");
+    Shader cityShader("resources/shaders/StaticModel.shader");
 
     // render loop
     // -----------
@@ -88,27 +93,48 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        titanShader.bind();
+
         // pass projection matrix to shader (note that in this case it could change every frame)
         glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        shader.setUniformMat4f("projection", projection);
+        titanShader.setUniformMat4f("projection", projection);
 
         // camera/view transformation
         glm::mat4 view = camera.getViewMatrix();
-        shader.setUniformMat4f("view", view);
+        titanShader.setUniformMat4f("view", view);
 
         auto transforms = animator.GetFinalBoneMatrices();
         for (int i = 0; i < transforms.size(); ++i)
-            shader.setUniformMat4f("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
+            titanShader.setUniformMat4f("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
 
         glm::mat4 model = glm::mat4(1.0f);
 
         // it's a bit too big for our scene, so scale it down
         model = glm::scale(model, glm::vec3(.0005f, .0005f, .0005f));
         //model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        shader.setUniformMat4f("model", model);
+        titanShader.setUniformMat4f("model", model);
 
-        colossalTitanModel.Draw(shader);
+        colossalTitanModel.Draw(titanShader);
+        titanShader.unbind();
 
+        // City
+        cityShader.bind();
+        projection = glm::perspective(glm::radians(camera.zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        cityShader.setUniformMat4f("projection", projection);
+
+        // camera/view transformation
+        view = camera.getViewMatrix();
+        cityShader.setUniformMat4f("view", view);
+
+        model = glm::mat4(1.0f);
+
+        // it's a bit too big for our scene, so scale it down
+        model = glm::scale(model, glm::vec3(.0025f, .0025f, .0025f));
+        model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        cityShader.setUniformMat4f("model", model);
+
+        city.Draw(cityShader);
+        cityShader.unbind();
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
