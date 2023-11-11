@@ -29,6 +29,7 @@ public:
     void bind() const;
     void unbind() const;
 
+    unsigned int getProgram();
     void setUniform1f(const std::string& name, float v1);
     void setUniform1i(const std::string& name, int v1);
     void setUniform3f(const std::string& name, float v1, float v2, float v3);

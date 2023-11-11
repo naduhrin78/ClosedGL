@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include <random>
 
 #include "Model.h"
 #include "Camera.h"
@@ -13,8 +14,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 // settings
-const unsigned int SCR_WIDTH = 1440;
-const unsigned int SCR_HEIGHT = 900;
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -64,9 +65,16 @@ int main()
 
     std::vector<Model*> colossalTitanModels;
     std::vector<Animator*> animators;
+    std::vector<std::pair<int, int>> titanTranslate;
 
     int NUM_TITANS = 10;
     int NUM_TITAN_ROWS = 4;
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::uniform_int_distribution<> randTitanXDis(73, 77);
+    std::uniform_int_distribution<> randTitanYDis(-5, 5);
 
     for (int i = 0; i < NUM_TITANS; i++) {
         Model* colossalTitanModel = new Model(const_cast<char*>(colossalTitanModelPath));
@@ -75,6 +83,7 @@ int main()
 
         colossalTitanModels.push_back(colossalTitanModel);
         animators.push_back(animator);
+        titanTranslate.push_back({ randTitanXDis(gen), randTitanYDis(gen) });
     }
 
     Shader titanShader("resources/shaders/AnimModel.shader");
@@ -98,6 +107,12 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glBegin(GL_TRIANGLES);
+        glVertex3f(-1.0, -1.0, 0.0);
+        glVertex3f(3.0, -1.0, 0.0);
+        glVertex3f(-1.0, 3.0, 0.0);
+        glEnd();
+
         titanShader.bind();
 
         for (int i = 0; i < NUM_TITANS; i++) {
@@ -119,7 +134,7 @@ int main()
 
             // it's a bit too big for our scene, so scale it down
             model = glm::scale(model, glm::vec3(.0005f, .0005f, .0005f));
-            model = glm::translate(model, glm::vec3(75 * i, 0.0f, 0.0f));
+            model = glm::translate(model, glm::vec3(titanTranslate[i].first * i, 0.0f, titanTranslate[i].second * i));
 
             //model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             titanShader.setUniformMat4f("model", model);

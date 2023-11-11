@@ -28,6 +28,10 @@ void Shader::unbind() const {
     glUseProgram(0);
 }
 
+unsigned int Shader::getProgram() {
+    return id;
+}
+
 ShaderSource Shader::parseShader(const std::string& filePath) {
     std::ifstream stream(filePath);
     std::stringstream ss[2];
