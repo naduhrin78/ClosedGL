@@ -173,6 +173,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\shaders\AnimModel.shader" />
+    <None Include="resources\shaders\Basic.shader" />
+    <None Include="resources\shaders\StaticModel.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
